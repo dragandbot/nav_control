@@ -1,0 +1,3 @@
+<launch>
+  <node pkg="nav_control" type="nav_control" name="nav_control" output="screen"/>
+</launch>
