@@ -1,0 +1,90 @@
+{
+    "version": "0.1.3",
+    "errorcodes": [
+        "TIMEOUT_SERVICE"
+    ],
+    "type": "Basic",
+    "inputParameters": [
+        {
+            "availableOptions": [],
+            "parameters": [
+                {
+                    "availableOptions": [],
+                    "parameters": [],
+                    "constraints": [],
+                    "paramId": "3a048cd1-50a6-4979-8ee3-4c84078ca162",
+                    "displayTitle": "x",
+                    "title": "x",
+                    "description": null,
+                    "value": null,
+                    "type": "primitive",
+                    "dataType": "double",
+                    "inputMode": "manual",
+                    "reference": null
+                },
+                {
+                    "availableOptions": [],
+                    "parameters": [],
+                    "constraints": [],
+                    "paramId": "c6063b29-c09a-4f38-8cab-8005629d1208",
+                    "displayTitle": "y",
+                    "title": "y",
+                    "description": null,
+                    "value": null,
+                    "type": "primitive",
+                    "dataType": "double",
+                    "inputMode": "manual",
+                    "reference": null
+                },
+                {
+                    "availableOptions": [],
+                    "parameters": [],
+                    "constraints": [],
+                    "paramId": "0a923e01-86c2-4a1a-853a-6ac601ad4a14",
+                    "displayTitle": "theta",
+                    "title": "theta",
+                    "description": null,
+                    "value": null,
+                    "type": "primitive",
+                    "dataType": "double",
+                    "inputMode": "manual",
+                    "reference": null
+                }
+            ],
+            "constraints": [],
+            "paramId": "c6063b29-c09b-4f38-2cab-8005629d1208",
+            "displayTitle": "Pose 2D",
+            "title": "pose_2d",
+            "description": null,
+            "value": null,
+            "type": "group",
+            "dataType": "pose2D",
+            "inputMode": "manual",
+            "reference": null
+        }
+    ],
+    "globalParameters": [],
+    "outputParameters": [
+        {
+            "availableOptions": [],
+            "parameters": [],
+            "constraints": [],
+            "paramId": "f317ede1-a397-42c1-8ec5-a3e8d6bbdad2",
+            "displayTitle": "error_code",
+            "title": "error_code",
+            "description": null,
+            "value": null,
+            "type": "primitive",
+            "dataType": "integer",
+            "inputMode": "manual",
+            "reference": null
+        }
+    ],
+    "title": "Mobile Platform - Move",
+    "description": "Moves a mobile platform to a coordinate x, y, theta.",
+    "image": "icons-general-skill",
+    "script": "#!/usr/bin/env python\n\n# optional IMPORTS\nimport rospy\nimport nav_control.srv\nimport geometry_msgs.msg\n\ndef execute(input_parameters, output_parameters):\n\ttry:\n\t\trospy.wait_for_service('/nav_control/move_to', timeout=5)\n\t\tmove_to_srv = rospy.ServiceProxy('/nav_control/move_to', nav_control.srv.MoveTo)\n\texcept ROSException:\n\t\trospy.logerr(\"Could not find move_to service\")\n\t\traise Exception(\"TIMEOUT_SERVICE\")\n\texcept:\n\t\traise Exception(\"DEFAULT\")\t\t\n\t\n\ttarget = geometry_msgs.msg.Pose2D()\n\ttarget.x = input_parameters[0]['parameters'][0]['value']\n\ttarget.y = input_parameters[0]['parameters'][0]['value']\n\ttarget.theta = input_parameters[0]['parameters'][0]['value']\n\t\t\t\n\trospy.loginfo(\"Mobile Platform - MoveTo \"+ \\\n\t\t\t\t  +\"(x: \"+ str(round(target.x), 3) \\\n\t\t\t\t  +\" |y: \"+ str(round(target.y), 3) \\\n\t\t\t\t  +\") with theta: \"+ str(round(target.theta), 3)\t\t\t\t  \t\n\tresp = move_to_srv(target)\n\toutput_parameters[0]['value'] = resp\n\t\n\t# check if mobile platform reached target succesfully\n\tif resp == 0:\n\t\trospy.loginfo(\"Mobile Platform - MoveTo succesful reached.)\n\telif resp !=0:\t\t\t\t\t  \n\t\trospy.logerr(\"Mobile Platform - MoveTo not reached (errorcode: \"+resp+\")\")\n\treturn output_parameters\n\ndef abort():\n\t# RUNS ON MANUAL ABORT OR AFTER ERROR\n\t# stop pending actions, clean up resources\n\tpass",
+    "identifier": "5ab57cc6-e4b0-420a-9726-9cd0daf76a88",
+    "models": [],
+    "format": "linked#2.1.0"
+}
