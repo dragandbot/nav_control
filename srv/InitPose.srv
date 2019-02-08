@@ -1,0 +1,3 @@
+geometry_msgs/Pose2D init_pose
+---
+geometry_msgs/Pose2D cur_pose

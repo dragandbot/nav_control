@@ -15,10 +15,10 @@ import websocket
 import yaml
 from rospy_message_converter import message_converter
 
-from geometry_msgs.msg import PoseStamped, Pose2D
+from geometry_msgs.msg import PoseStamped, Pose2D, PoseWithCovarianceStamped
 from std_msgs.msg import Bool, String
 from move_base_msgs.msg import *
-from nav_control.srv import MoveTo, MoveToResponse
+from nav_control.srv import MoveTo, MoveToResponse, GetPose, GetPoseResponse, GetPoseRequest, InitPose, InitPoseResponse
 import tf
 import rospy
 
@@ -142,17 +142,36 @@ class WebsocketROSClient(object):
         result =  message_converter.convert_dictionary_to_ros_message(type, dictionary)
         # print("Type: '%s' \n Received: '%s'" % (type, result))
         return result
+"""
+  NavControl class
+    Grants access via rosbridge_server to a mobile robot
 
+    Use the move_to-service to move the robot to a defined position
+      Request: geometry_msgs/Pose2D -> Position the robot should move to in the robot's "map"-coordinate-frame
+      Response: std_msgs/Int32 -> 0 indicates successfull operation, 1 indicates failure
+
+    Use the get_pose-service to return a position in the robot's "map"-coordinate frame
+      Request: Empty
+      Response: geometry_msgs/Pose2D -> the robots localization in the robot's "map"-coordinate-frame
+
+    Use the init_pose-service to set an initial position in the robot's "map"-coordinate frame
+      Request: geometry_msgs/Pose2D -> the initital position in the robot's "map"-coordinate-frame
+      Response: geometry_msgs/Pose2D -> the robots localization in the robot's "map"-coordinate-frame
+"""
 class NavControl:
 
     def __init__(self, ns):
       self.nav_running = False
       self.return_value = 0
-      self.ws_client = WebsocketROSClient('127.0.0.1')
-      self.service = rospy.Service(ns + "/nav_control/move_to", MoveTo, self.serviceCallback)
-      rospy.loginfo("finished initialization")
+      server_ip = rospy.get_param("~robot_ip", "127.0.0.1")
+      self.ws_client = WebsocketROSClient(server_ip)
+      self.move_to_service = rospy.Service(ns + "/nav_control/move_to", MoveTo, self.moveToCallback)
+      self.get_pose_service = rospy.Service(ns + "/nav_control/get_pose", GetPose, self.getPoseCallback)
+      self.init_pose_service = rospy.Service(ns + "/nav_control/init_pose", InitPose, self.initPoseCallback)
+      rospy.logdebug("finished initialization")
 
-    def serviceCallback(self, req):
+    def moveToCallback(self, req):
+      #convert geometry_msgs/Pose2D to geometry_msgs/PoseStamped
       msg = PoseStamped()
       msg.header.frame_id = "map"
       msg.header.stamp = rospy.get_rostime()
@@ -160,13 +179,51 @@ class NavControl:
       msg.pose.position.y = req.goal.y
       msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w = \
         tf.transformations.quaternion_from_euler(0.0, 0.0, req.goal.theta)
-      self.nav_running = True
+
+      self.nav_running = True #indicate the move_base-state
+      #Send to robot
       self.ws_client.publish("/move_base_simple/goal", msg)
+      #Blocking subscription
       result = self.ws_client.subscribe('/move_base/result', MoveBaseActionResult())
-      self.goalReachedCallback(result)
+      self.handleMbResult(result)
       return MoveToResponse(self.return_value)
 
-    def goalReachedCallback(self, data):
+    def getPoseCallback(self, req):
+      #subscribe to robot's pose topic
+      print "wait for pose"
+      result = self.ws_client.subscribe('/pose', PoseStamped())
+      print "got"
+      #convert to geometry_msgs/Pose2D
+      msg = Pose2D()
+      msg.x = result.pose.position.x
+      msg.y = result.pose.position.y
+      msg.theta = tf.transformations.euler_from_quaternion([result.pose.orientation.x,  \
+        result.pose.orientation.y, \
+        result.pose.orientation.z, \
+        result.pose.orientation.w])[2]
+      return GetPoseResponse(msg)
+
+    def initPoseCallback(self, req):
+      #convert geometry_msgs/Pose2D to geometry_msgs/PoseStamped
+      msg = PoseWithCovarianceStamped()
+      msg.header.frame_id = "map"
+      msg.header.stamp = rospy.get_rostime()
+      msg.pose.pose.position.x = req.init_pose.x
+      msg.pose.pose.position.y = req.init_pose.y
+      msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w = \
+        tf.transformations.quaternion_from_euler(0.0, 0.0, req.init_pose.theta)
+      msg.pose.covariance[0] = 0.1 #var(x)
+      msg.pose.covariance[7] = 0.1 #var(y)
+      msg.pose.covariance[35] = 0.068 #var(theta)
+      #Send to robot
+      self.ws_client.publish("/initialpose", msg)
+      #virtually call get_pose-service and use return to indicate a successfull operation
+      return InitPoseResponse(self.getPoseCallback(GetPoseRequest()).pose)
+
+
+      return GetPoseResponse(msg)
+
+    def handleMbResult(self, data):
       if (data.status.status == 3):
         self.return_value = 0
       else:

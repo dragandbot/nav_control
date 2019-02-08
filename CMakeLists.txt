@@ -17,6 +17,8 @@ catkin_python_setup()
 add_service_files(
   DIRECTORY srv
   FILES
+    GetPose.srv
+    InitPose.srv
     MoveTo.srv
 )
 
