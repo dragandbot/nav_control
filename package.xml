@@ -17,6 +17,7 @@
   <depend>actionlib_msgs</depend>
   <depend>geometry_msgs</depend>
   <depend>std_msgs</depend>
+  <depend>move_base_msgs</depend>
   <depend>rospy_message_converter</depend>
   <depend>rospy</depend>
   <depend>tf</depend>

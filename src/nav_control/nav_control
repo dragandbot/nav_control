@@ -6,6 +6,7 @@
 # Proprietary and confidential.
 
 import json
+import sys
 from uuid import uuid4
 # Note that this needs:
 # sudo pip install websocket-client
@@ -29,8 +30,12 @@ class WebsocketROSClient(object):
         :param int port: Port of the websocket server, defaults to 9090.
         """
         print("Connecting to websocket: {}:{}".format(websocket_ip, port))
-        self.ws = websocket.create_connection(
-            'ws://' + websocket_ip + ':' + str(port))
+	try:
+            self.ws = websocket.create_connection(
+                'ws://' + websocket_ip + ':' + str(port))
+        except Exception:
+            rospy.logerr("Could not open websocket {}:{}".format(websocket_ip, port))
+            rospy.signal_shutdown("Could not open websocket {}:{}".format(websocket_ip, port))
         self._advertise_dict = {}
 
     def _advertise(self, topic_name, topic_type):

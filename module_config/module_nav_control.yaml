@@ -1,0 +1,10 @@
+package: nav_control
+name: 'Mobile Platform IPA-Nav'
+description: 'The navigation interface to the IPA software for mobile platforms.'
+type: module/navigation/ipa
+roslaunch: start.launch
+configuration:
+nodes:
+  - node_callerid: /nav_control # The name of the node inside the launch file
+    type: nav_control.py # The file which is started inside the node
+status_topic: /nav_control/status
