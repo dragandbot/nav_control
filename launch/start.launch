@@ -1,3 +1,7 @@
 <launch>
-  <node pkg="nav_control" type="nav_control" name="nav_control" output="screen"/>
+  <arg name="robot_ip" default="127.0.0.1"/>
+
+  <node pkg="nav_control" type="nav_control" name="nav_control" output="screen">
+    <param name="robot_ip" value="$(arg robot_ip)" />
+  </node>
 </launch>
