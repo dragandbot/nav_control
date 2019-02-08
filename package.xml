@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>nav_control</name>
+  <version>0.1.0</version>
+  <description>The nav_control package</description>
+
+  <maintainer email="fke@ipa.fraunhofer.de">falk</maintainer>
+
+  <license>Fraunhofer IPA</license>se>
+
+  <author >Falk Engmann</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>message_generation</build_depend>
+
+  <depend>actionlib_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>rospy_message_converter</depend>
+  <depend>rospy</depend>
+  <depend>tf</depend>
+  <depend>python-websocket</depend>
+
+  <exec_depend>message_runtime</exec_depend>
+
+</package>
